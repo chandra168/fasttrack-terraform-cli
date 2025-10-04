@@ -1,0 +1,132 @@
+# Fasttrack Terraform CLI - Example Configuration File
+#
+# This file demonstrates all available configuration options.
+# Copy this file and customize it for your project.
+#
+# Usage: fasttrack generate --config-file example-config.yaml
+
+# ============================================================
+# REQUIRED SETTINGS
+# ============================================================
+
+# Project identifier (used for tagging and naming)
+project_name: my-project
+
+# Azure resource group name
+resource_group: my-project-rg
+
+# ============================================================
+# BASIC SETTINGS
+# ============================================================
+
+# Azure region where resources will be created
+# Examples: eastus, westus2, centralus, northeurope, westeurope
+location: eastus
+
+# Environment name (used for tagging)
+# Examples: development, staging, production
+environment: development
+
+# ============================================================
+# AZURE AD APP REGISTRATION (Optional)
+# ============================================================
+# Uncomment to create an Azure AD application registration
+
+app_name: my-app-registration
+redirect_url: https://my-app.example.com/auth/callback
+
+# Client secret rotation period in months
+secret_rotation_months: 12
+
+# ============================================================
+# AZURE STORAGE ACCOUNT (Optional)
+# ============================================================
+# Uncomment to create a storage account with containers
+
+# Storage account name (3-24 lowercase alphanumeric characters)
+storage_account: mystorageacct123
+
+# Container names to create
+containers:
+  - data
+  - logs
+  - backups
+
+# Storage tier: Standard or Premium
+storage_tier: Standard
+
+# Replication type: LRS, GRS, RAGRS, or ZRS
+# LRS = Locally Redundant Storage
+# GRS = Geo-Redundant Storage
+# RAGRS = Read-Access Geo-Redundant Storage
+# ZRS = Zone-Redundant Storage
+storage_replication: LRS
+
+# ============================================================
+# REMOTE STATE BACKEND (Optional)
+# ============================================================
+# Uncomment to enable Azure Storage backend for Terraform state
+# This is recommended for team collaboration and production use
+
+remote_state:
+  # Storage account for Terraform state (must exist beforehand)
+  storage_account: tfstatestorageacct
+
+  # Container name for state files
+  container: tfstate
+
+  # State file name (should be unique per project)
+  key: my-project.tfstate
+
+# ============================================================
+# EXAMPLE CONFIGURATIONS
+# ============================================================
+
+# Example 1: Minimal Configuration (Storage Only)
+# ------------------------------------------------
+# project_name: simple-project
+# resource_group: simple-rg
+# storage_account: simplestg123
+# containers:
+#   - data
+
+# Example 2: App Registration Only
+# ------------------------------------------------
+# project_name: auth-project
+# resource_group: auth-rg
+# app_name: auth-app
+# redirect_url: https://auth-app.example.com/callback
+
+# Example 3: Full Production Setup
+# ------------------------------------------------
+# project_name: production-app
+# resource_group: production-rg
+# location: westus2
+# environment: production
+# app_name: production-app
+# redirect_url: https://production-app.example.com/auth/callback
+# storage_account: prodstg123
+# containers:
+#   - data
+#   - logs
+#   - backups
+#   - archives
+# storage_tier: Premium
+# storage_replication: GRS
+# secret_rotation_months: 6
+# remote_state:
+#   storage_account: prodtfstate
+#   container: tfstate
+#   key: production-app.tfstate
+
+# Example 4: Multi-Environment Pattern
+# ------------------------------------------------
+# Create separate config files for each environment:
+# - dev-config.yaml
+# - staging-config.yaml
+# - production-config.yaml
+#
+# Then deploy with:
+# fasttrack generate --config-file dev-config.yaml --output-dir ./terraform-dev
+# fasttrack generate --config-file staging-config.yaml --output-dir ./terraform-staging
+# fasttrack generate --config-file production-config.yaml --output-dir ./terraform-prod

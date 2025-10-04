@@ -47,6 +47,10 @@ test-yaml-output/
 terraform-generated/
 test-config.yaml
 
+# User config files (example-config.yaml is kept for reference)
+*-config.yaml
+!example-config.yaml
+
 # IDE
 .vscode/
 .idea/
