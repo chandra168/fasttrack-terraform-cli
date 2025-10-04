@@ -39,12 +39,14 @@ output "tenant_id" {
 {% if create_storage %}
 output "storage_account_name" {
   description = "The name of the storage account"
-  value       = azurerm_storage_account.main.name
+  value       = {% if use_existing_storage %}data.azurerm_storage_account.existing.name{% else %}azurerm_storage_account.main.name{% endif %}
+
 }
 
 output "storage_account_primary_blob_endpoint" {
   description = "The primary blob endpoint of the storage account"
-  value       = azurerm_storage_account.main.primary_blob_endpoint
+  value       = {% if use_existing_storage %}data.azurerm_storage_account.existing.primary_blob_endpoint{% else %}azurerm_storage_account.main.primary_blob_endpoint{% endif %}
+
 }
 
 {% if storage_containers %}

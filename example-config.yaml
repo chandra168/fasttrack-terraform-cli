@@ -46,16 +46,21 @@ secret_rotation_months: 12
 # Storage account name (3-24 lowercase alphanumeric characters)
 storage_account: mystorageacct123
 
+# Use existing storage account (only create containers, don't create the storage account)
+# Set to true if the storage account already exists and you only want to add containers
+# Default: false (will create new storage account)
+use_existing_storage: false
+
 # Container names to create
 containers:
   - data
   - logs
   - backups
 
-# Storage tier: Standard or Premium
+# Storage tier: Standard or Premium (ignored if use_existing_storage is true)
 storage_tier: Standard
 
-# Replication type: LRS, GRS, RAGRS, or ZRS
+# Replication type: LRS, GRS, RAGRS, or ZRS (ignored if use_existing_storage is true)
 # LRS = Locally Redundant Storage
 # GRS = Geo-Redundant Storage
 # RAGRS = Read-Access Geo-Redundant Storage
@@ -119,7 +124,17 @@ remote_state:
 #   container: tfstate
 #   key: production-app.tfstate
 
-# Example 4: Multi-Environment Pattern
+# Example 4: Add Containers to Existing Storage Account
+# ------------------------------------------------
+# project_name: container-project
+# resource_group: existing-rg
+# storage_account: existingstg123
+# use_existing_storage: true
+# containers:
+#   - new-container-1
+#   - new-container-2
+
+# Example 5: Multi-Environment Pattern
 # ------------------------------------------------
 # Create separate config files for each environment:
 # - dev-config.yaml

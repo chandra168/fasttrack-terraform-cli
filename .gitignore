@@ -43,6 +43,7 @@ override.tf.json
 # Test Output
 test-output/
 test-yaml-output/
+test-existing-storage/
 *-terraform/
 terraform-generated/
 test-config.yaml

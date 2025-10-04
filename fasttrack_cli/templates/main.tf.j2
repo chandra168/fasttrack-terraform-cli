@@ -115,7 +115,14 @@ resource "azuread_application_password" "client_secret" {
 # Storage Account and Container Configuration
 # ---------------------------------------------------------------------------------------------------------------------
 
-# Create storage account
+{% if use_existing_storage %}
+# Use existing storage account
+data "azurerm_storage_account" "existing" {
+  name                = var.storage_account_name
+  resource_group_name = azurerm_resource_group.main.name
+}
+{% else %}
+# Create new storage account
 resource "azurerm_storage_account" "main" {
   name                     = var.storage_account_name
   resource_group_name      = azurerm_resource_group.main.name
@@ -135,13 +142,15 @@ resource "azurerm_storage_account" "main" {
     created_by  = "fasttrack-cli"
   }
 }
+{% endif %}
 
 {% if storage_containers %}
 # Create storage containers
 {% for container in storage_containers %}
 resource "azurerm_storage_container" "container_{{ loop.index }}" {
   name                  = "{{ container }}"
-  storage_account_name  = azurerm_storage_account.main.name
+  storage_account_name  = {% if use_existing_storage %}data.azurerm_storage_account.existing.name{% else %}azurerm_storage_account.main.name{% endif %}
+
   container_access_type = "private"
 
   metadata = {

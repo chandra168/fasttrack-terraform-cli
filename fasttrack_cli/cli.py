@@ -41,6 +41,7 @@ def cli():
 @click.option('--app-name', help='Azure AD app registration name')
 @click.option('--redirect-url', help='OAuth redirect URL for app registration')
 @click.option('--storage-account', help='Storage account name (3-24 lowercase alphanumeric chars)')
+@click.option('--use-existing-storage', is_flag=True, help='Use existing storage account (only create containers)')
 @click.option('--containers', multiple=True, help='Storage container names (can specify multiple)')
 @click.option('--storage-tier', default='Standard', type=click.Choice(['Standard', 'Premium']), help='Storage tier')
 @click.option('--storage-replication', default='LRS', type=click.Choice(['LRS', 'GRS', 'RAGRS', 'ZRS']), help='Storage replication type')
@@ -54,7 +55,7 @@ def cli():
 @click.option('--state-container', default='tfstate', help='Container name for remote state')
 @click.option('--state-key', help='State file key (default: <project-name>.tfstate)')
 def generate(project_name, resource_group, location, environment, app_name, redirect_url,
-             storage_account, containers, storage_tier, storage_replication,
+             storage_account, use_existing_storage, containers, storage_tier, storage_replication,
              secret_rotation_months, output_dir, skip_validation, dry_run, config_file,
              enable_remote_state, state_storage_account, state_container, state_key):
     """Generate Terraform configuration files"""
@@ -77,6 +78,7 @@ def generate(project_name, resource_group, location, environment, app_name, redi
                 app_name = app_name or file_config.get('app_name')
                 redirect_url = redirect_url or file_config.get('redirect_url')
                 storage_account = storage_account or file_config.get('storage_account')
+                use_existing_storage = use_existing_storage or file_config.get('use_existing_storage', False)
                 containers = containers or tuple(file_config.get('containers', []))
                 storage_tier = file_config.get('storage_tier', storage_tier)
                 storage_replication = file_config.get('storage_replication', storage_replication)
@@ -127,6 +129,7 @@ def generate(project_name, resource_group, location, environment, app_name, redi
         "environment": environment,
         "create_app_registration": bool(app_name),
         "create_storage": bool(storage_account),
+        "use_existing_storage": use_existing_storage,
         "storage_tier": storage_tier,
         "storage_replication": storage_replication,
         "secret_rotation_months": secret_rotation_months,
@@ -169,9 +172,12 @@ def generate(project_name, resource_group, location, environment, app_name, redi
         click.echo(f"  Redirect URL: {config['redirect_url']}")
 
     if storage_account:
-        click.echo(f"  Storage Account: {storage_account}")
-        click.echo(f"  Storage Tier: {storage_tier}")
-        click.echo(f"  Replication: {storage_replication}")
+        if use_existing_storage:
+            click.echo(f"  Storage Account: {storage_account} (existing)")
+        else:
+            click.echo(f"  Storage Account: {storage_account}")
+            click.echo(f"  Storage Tier: {storage_tier}")
+            click.echo(f"  Replication: {storage_replication}")
         if containers:
             click.echo(f"  Containers: {', '.join(containers)}")
 
