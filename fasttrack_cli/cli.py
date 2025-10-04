@@ -16,10 +16,12 @@ from .utils.azure_helper import (
 from .utils.terraform_helper import (
     validate_terraform_installation,
     terraform_init,
+    terraform_validate,
     terraform_plan,
     terraform_apply,
     terraform_destroy,
-    terraform_output
+    terraform_output,
+    terraform_import
 )
 from .utils.template_generator import TerraformTemplateGenerator, validate_config
 
@@ -32,8 +34,8 @@ def cli():
 
 
 @cli.command()
-@click.option('--project-name', required=True, help='Project name')
-@click.option('--resource-group', required=True, help='Resource group name')
+@click.option('--project-name', help='Project name')
+@click.option('--resource-group', help='Resource group name')
 @click.option('--location', default='eastus', help='Azure region (default: eastus)')
 @click.option('--environment', default='development', help='Environment name (default: development)')
 @click.option('--app-name', help='Azure AD app registration name')
@@ -45,16 +47,64 @@ def cli():
 @click.option('--secret-rotation-months', default=12, type=int, help='Client secret rotation period in months')
 @click.option('--output-dir', default='./terraform-generated', help='Output directory for Terraform files')
 @click.option('--skip-validation', is_flag=True, help='Skip Azure login validation')
+@click.option('--dry-run', is_flag=True, help='Show what would be generated without writing files')
+@click.option('--config-file', type=click.Path(exists=True), help='Load configuration from YAML file')
+@click.option('--enable-remote-state', is_flag=True, help='Add remote state backend configuration')
+@click.option('--state-storage-account', help='Storage account for remote state')
+@click.option('--state-container', default='tfstate', help='Container name for remote state')
+@click.option('--state-key', help='State file key (default: <project-name>.tfstate)')
 def generate(project_name, resource_group, location, environment, app_name, redirect_url,
              storage_account, containers, storage_tier, storage_replication,
-             secret_rotation_months, output_dir, skip_validation):
+             secret_rotation_months, output_dir, skip_validation, dry_run, config_file,
+             enable_remote_state, state_storage_account, state_container, state_key):
     """Generate Terraform configuration files"""
 
     click.secho("\n🚀 Fasttrack Terraform CLI - Generate Configuration", fg="cyan", bold=True)
     click.echo("=" * 60)
 
+    # Load configuration from file if provided
+    if config_file:
+        import yaml
+        click.echo(f"📄 Loading configuration from: {config_file}")
+        try:
+            with open(config_file, 'r') as f:
+                file_config = yaml.safe_load(f)
+                # Command line args override file config
+                project_name = project_name or file_config.get('project_name')
+                resource_group = resource_group or file_config.get('resource_group')
+                location = file_config.get('location', location)
+                environment = file_config.get('environment', environment)
+                app_name = app_name or file_config.get('app_name')
+                redirect_url = redirect_url or file_config.get('redirect_url')
+                storage_account = storage_account or file_config.get('storage_account')
+                containers = containers or tuple(file_config.get('containers', []))
+                storage_tier = file_config.get('storage_tier', storage_tier)
+                storage_replication = file_config.get('storage_replication', storage_replication)
+                secret_rotation_months = file_config.get('secret_rotation_months', secret_rotation_months)
+
+                # Remote state config from file
+                if 'remote_state' in file_config:
+                    enable_remote_state = True
+                    rs = file_config['remote_state']
+                    state_storage_account = state_storage_account or rs.get('storage_account')
+                    state_container = rs.get('container', state_container)
+                    state_key = state_key or rs.get('key')
+
+                click.secho("✓ Configuration loaded from file", fg="green")
+        except Exception as e:
+            click.secho(f"✗ Error loading config file: {str(e)}", fg="red")
+            sys.exit(1)
+
+    # Ensure required fields are present
+    if not project_name:
+        click.secho("✗ project_name is required (via --project-name or config file)", fg="red")
+        sys.exit(1)
+    if not resource_group:
+        click.secho("✗ resource_group is required (via --resource-group or config file)", fg="red")
+        sys.exit(1)
+
     # Validate prerequisites
-    if not skip_validation:
+    if not skip_validation and not dry_run:
         try:
             validate_azure_login()
             click.secho("✓ Azure CLI authenticated", fg="green")
@@ -80,7 +130,11 @@ def generate(project_name, resource_group, location, environment, app_name, redi
         "storage_tier": storage_tier,
         "storage_replication": storage_replication,
         "secret_rotation_months": secret_rotation_months,
-        "secret_display_name": "Generated by Fasttrack CLI"
+        "secret_display_name": "Generated by Fasttrack CLI",
+        "enable_remote_state": enable_remote_state,
+        "state_storage_account": state_storage_account,
+        "state_container": state_container,
+        "state_key": state_key or f"{project_name}.tfstate"
     }
 
     if app_name:
@@ -120,6 +174,27 @@ def generate(project_name, resource_group, location, environment, app_name, redi
         click.echo(f"  Replication: {storage_replication}")
         if containers:
             click.echo(f"  Containers: {', '.join(containers)}")
+
+    if enable_remote_state:
+        click.echo(f"\n🔄 Remote State:")
+        click.echo(f"  Storage Account: {state_storage_account}")
+        click.echo(f"  Container: {state_container}")
+        click.echo(f"  Key: {config['state_key']}")
+
+    # Dry run mode
+    if dry_run:
+        click.echo("\n" + "=" * 60)
+        click.secho("🔍 DRY RUN MODE - No files will be written", fg="yellow", bold=True)
+        click.echo("\n📄 Files that would be generated:")
+        click.echo(f"  {output_dir}/main.tf")
+        click.echo(f"  {output_dir}/variables.tf")
+        click.echo(f"  {output_dir}/data.tf")
+        click.echo(f"  {output_dir}/outputs.tf")
+        if enable_remote_state:
+            click.echo(f"  {output_dir}/backend.tf")
+        click.echo(f"\n✓ Configuration validated successfully")
+        click.echo(f"\n💡 To generate files, run without --dry-run flag")
+        return
 
     # Generate templates
     click.echo("\n📝 Generating Terraform files...")
@@ -161,6 +236,12 @@ def apply(directory, auto_approve):
 
     # Initialize
     if not terraform_init(directory):
+        sys.exit(1)
+
+    click.echo()
+
+    # Validate
+    if not terraform_validate(directory):
         sys.exit(1)
 
     click.echo()
@@ -235,6 +316,47 @@ def destroy(directory, auto_approve):
         sys.exit(1)
 
     click.echo("\n✅ Resources destroyed successfully!")
+
+
+@cli.command()
+@click.option('--directory', default='./terraform-generated', help='Terraform configuration directory')
+@click.option('--resource-address', required=True, help='Terraform resource address (e.g., azurerm_resource_group.main)')
+@click.option('--resource-id', required=True, help='Azure resource ID to import')
+def import_resource(directory, resource_address, resource_id):
+    """Import existing Azure resource into Terraform state"""
+
+    click.secho("\n📥 Fasttrack Terraform CLI - Import Resource", fg="cyan", bold=True)
+    click.echo("=" * 60)
+
+    if not os.path.exists(directory):
+        click.secho(f"✗ Directory not found: {directory}", fg="red")
+        sys.exit(1)
+
+    # Validate prerequisites
+    try:
+        validate_azure_login()
+        validate_terraform_installation()
+    except click.ClickException as e:
+        click.secho(f"✗ {str(e)}", fg="red")
+        sys.exit(1)
+
+    # Initialize if needed
+    terraform_dir = Path(directory)
+    if not (terraform_dir / ".terraform").exists():
+        click.echo("Terraform not initialized. Running init...")
+        if not terraform_init(directory):
+            sys.exit(1)
+        click.echo()
+
+    # Import resource
+    if not terraform_import(directory, resource_address, resource_id):
+        sys.exit(1)
+
+    click.echo("\n✅ Resource imported successfully!")
+    click.echo(f"\n💡 Next steps:")
+    click.echo(f"  1. Review the imported resource in Terraform state")
+    click.echo(f"  2. Add corresponding configuration to your .tf files")
+    click.echo(f"  3. Run: terraform plan to verify the import")
 
 
 @cli.command()

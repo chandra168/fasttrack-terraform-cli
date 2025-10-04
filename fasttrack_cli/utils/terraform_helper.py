@@ -47,6 +47,21 @@ def terraform_init(directory: str) -> bool:
     return success
 
 
+def terraform_validate(directory: str) -> bool:
+    """Run terraform validate"""
+    click.echo("Validating Terraform configuration...")
+    success, output = run_terraform_command(["terraform", "validate"], directory)
+
+    click.echo(output)
+
+    if success:
+        click.secho("✓ Terraform configuration is valid", fg="green")
+    else:
+        click.secho("✗ Terraform validation failed", fg="red")
+
+    return success
+
+
 def terraform_plan(directory: str) -> bool:
     """Run terraform plan"""
     click.echo("Running Terraform plan...")
@@ -125,6 +140,23 @@ def check_terraform_installed() -> bool:
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         return False
+
+
+def terraform_import(directory: str, resource_address: str, resource_id: str) -> bool:
+    """Import existing resource into Terraform state"""
+    click.echo(f"Importing {resource_address}...")
+
+    command = ["terraform", "import", resource_address, resource_id]
+    success, output = run_terraform_command(command, directory)
+
+    click.echo(output)
+
+    if success:
+        click.secho(f"✓ Resource imported successfully", fg="green")
+    else:
+        click.secho(f"✗ Import failed", fg="red")
+
+    return success
 
 
 def validate_terraform_installation():

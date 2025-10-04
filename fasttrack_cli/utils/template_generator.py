@@ -41,6 +41,10 @@ class TerraformTemplateGenerator:
         # Generate outputs.tf
         self._render_template("outputs.tf.j2", output_path / "outputs.tf", config)
 
+        # Generate backend.tf if remote state is enabled
+        if config.get("enable_remote_state"):
+            self._render_template("backend.tf.j2", output_path / "backend.tf", config)
+
         click.secho(f"✓ Terraform configuration generated in: {output_dir}", fg="green")
 
     def _render_template(self, template_name: str, output_file: Path, config: dict):
@@ -89,5 +93,13 @@ def validate_config(config: dict) -> tuple[bool, str]:
             return False, "azuread_app_name is required when create_app_registration is True"
         if not config.get("redirect_url"):
             return False, "redirect_url is required when create_app_registration is True"
+
+    if config.get("enable_remote_state"):
+        if not config.get("state_storage_account"):
+            return False, "state_storage_account is required when enable_remote_state is True"
+        if not config.get("state_container"):
+            return False, "state_container is required when enable_remote_state is True"
+        if not config.get("state_key"):
+            return False, "state_key is required when enable_remote_state is True"
 
     return True, ""

@@ -42,8 +42,10 @@ override.tf.json
 
 # Test Output
 test-output/
+test-yaml-output/
 *-terraform/
 terraform-generated/
+test-config.yaml
 
 # IDE
 .vscode/
