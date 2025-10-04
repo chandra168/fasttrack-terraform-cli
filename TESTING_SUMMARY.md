@@ -12,8 +12,8 @@
 - **Python:** 3.10
 - **Azure CLI:** Authenticated
 - **Terraform:** v1.5.7
-- **Azure Subscription:** Microsoft Azure Sponsorship
-- **Tenant ID:** 32c7586a-893b-4d00-9d24-d3644c3b1653
+- **Azure Subscription:** Your Azure Subscription
+- **Tenant ID:** xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ---
 
@@ -62,9 +62,9 @@ fasttrack check
 **Output:**
 ```
 ✓ Azure CLI authenticated
-  Subscription: Microsoft Azure Sponsorship
-  Tenant ID: 32c7586a-893b-4d00-9d24-d3644c3b1653
-  User: info@bodha.ai
+  Subscription: Your Azure Subscription
+  Tenant ID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+  User: user@example.com
 
 ✓ Terraform installed
   Terraform v1.5.7
@@ -119,10 +119,10 @@ fasttrack apply --directory ./test-output --auto-approve
 1. ✅ time_rotating.client_secret[0]
 2. ✅ azuread_application.app
    - Display Name: cli-test-app
-   - Application ID: a07c218f-2f35-4154-8e9a-2f5c39afc311
+   - Application ID: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
 3. ✅ azuread_application_password.client_secret[0]
 4. ✅ azuread_service_principal.app
-   - Object ID: 4c6c60a5-2773-4033-870d-d911d5e4caec
+   - Object ID: cccccccc-cccc-cccc-cccc-cccccccccccc
 5. ✅ azurerm_resource_group.main
    - Name: cli-test-rg
    - Location: eastus
@@ -147,19 +147,19 @@ fasttrack output --directory ./test-output
 **Result:** ✅ PASSED
 
 **Outputs Verified:**
-- ✅ application_id: a07c218f-2f35-4154-8e9a-2f5c39afc311
+- ✅ application_id: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
 - ✅ client_secret: (sensitive - verified accessible)
-- ✅ object_id: 0399dac4-1568-4a7a-9cc2-3d5bd91e5a51
+- ✅ object_id: bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb
 - ✅ resource_group_location: eastus
 - ✅ resource_group_name: cli-test-rg
-- ✅ service_principal_object_id: 4c6c60a5-2773-4033-870d-d911d5e4caec
+- ✅ service_principal_object_id: cccccccc-cccc-cccc-cccc-cccccccccccc
 - ✅ storage_account_name: cliteststg001
 - ✅ storage_account_primary_blob_endpoint: https://cliteststg001.blob.core.windows.net/
 - ✅ storage_container_1_name: data
 - ✅ storage_container_1_url: https://cliteststg001.blob.core.windows.net/data
 - ✅ storage_container_2_name: logs
 - ✅ storage_container_2_url: https://cliteststg001.blob.core.windows.net/logs
-- ✅ tenant_id: 32c7586a-893b-4d00-9d24-d3644c3b1653
+- ✅ tenant_id: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 
 ---
 
@@ -175,7 +175,7 @@ az storage account show --name cliteststg001 --resource-group cli-test-rg
 az storage container list --account-name cliteststg001 --auth-mode key
 
 # Verify App Registration
-az ad app show --id a07c218f-2f35-4154-8e9a-2f5c39afc311
+az ad app show --id aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa
 ```
 
 **Result:** ✅ PASSED
