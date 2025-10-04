@@ -1,0 +1,63 @@
+output "resource_group_name" {
+  description = "The name of the resource group"
+  value       = azurerm_resource_group.main.name
+}
+
+output "resource_group_location" {
+  description = "The location of the resource group"
+  value       = azurerm_resource_group.main.location
+}
+
+{% if create_app_registration %}
+output "application_id" {
+  description = "The Application (Client) ID of the Azure App Registration"
+  value       = azuread_application.app.client_id
+}
+
+output "object_id" {
+  description = "The Object ID of the Azure App Registration"
+  value       = azuread_application.app.object_id
+}
+
+output "client_secret" {
+  description = "The client secret value"
+  value       = azuread_application_password.client_secret[0].value
+  sensitive   = true
+}
+
+output "service_principal_object_id" {
+  description = "The Object ID of the Service Principal"
+  value       = azuread_service_principal.app.object_id
+}
+
+output "tenant_id" {
+  description = "The Azure AD Tenant ID"
+  value       = data.azuread_client_config.current.tenant_id
+}
+{% endif %}
+
+{% if create_storage %}
+output "storage_account_name" {
+  description = "The name of the storage account"
+  value       = azurerm_storage_account.main.name
+}
+
+output "storage_account_primary_blob_endpoint" {
+  description = "The primary blob endpoint of the storage account"
+  value       = azurerm_storage_account.main.primary_blob_endpoint
+}
+
+{% if storage_containers %}
+{% for container in storage_containers %}
+output "storage_container_{{ loop.index }}_name" {
+  description = "The name of storage container {{ loop.index }}"
+  value       = azurerm_storage_container.container_{{ loop.index }}.name
+}
+
+output "storage_container_{{ loop.index }}_url" {
+  description = "The URL of storage container {{ loop.index }}"
+  value       = azurerm_storage_container.container_{{ loop.index }}.id
+}
+{% endfor %}
+{% endif %}
+{% endif %}

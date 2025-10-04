@@ -1,0 +1,45 @@
+variable "resource_group_name" {
+  description = "The name of the resource group"
+  type        = string
+  default     = "{{ resource_group_name }}"
+}
+
+variable "location" {
+  description = "The Azure region where resources will be created"
+  type        = string
+  default     = "{{ location }}"
+}
+
+variable "environment" {
+  description = "Environment name for tagging"
+  type        = string
+  default     = "{{ environment }}"
+}
+
+variable "project_name" {
+  description = "Project name for tagging"
+  type        = string
+  default     = "{{ project_name }}"
+}
+
+{% if create_app_registration %}
+variable "azuread_app_name" {
+  description = "The name of the Azure App Registration"
+  type        = string
+  default     = "{{ azuread_app_name }}"
+}
+
+variable "redirect_url" {
+  description = "The redirect URL for the Azure App Registration"
+  type        = string
+  default     = "{{ redirect_url }}"
+}
+{% endif %}
+
+{% if create_storage %}
+variable "storage_account_name" {
+  description = "The name of the storage account"
+  type        = string
+  default     = "{{ storage_account_name }}"
+}
+{% endif %}

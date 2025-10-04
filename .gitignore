@@ -1,0 +1,6 @@
+venv
+fasttrack_terraform_cli.egg-info/
+*.pyc
+__pycache__
+test-output
+
