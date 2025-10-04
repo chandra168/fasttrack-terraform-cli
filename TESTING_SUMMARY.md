@@ -21,7 +21,7 @@
 
 ### Test 1: Package Installation
 ```bash
-cd /Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli
+cd fasttrack-terraform-cli
 python3 -m venv venv
 source venv/bin/activate
 pip install -e .
@@ -83,7 +83,7 @@ fasttrack generate \
   --storage-account cliteststg001 \
   --containers data \
   --containers logs \
-  --output-dir /Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli/test-output
+  --output-dir ./test-output
 ```
 
 **Result:** ✅ PASSED
@@ -110,7 +110,7 @@ fasttrack generate \
 
 ### Test 5: Terraform Apply
 ```bash
-fasttrack apply --directory /Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli/test-output --auto-approve
+fasttrack apply --directory ./test-output --auto-approve
 ```
 
 **Result:** ✅ PASSED
@@ -141,7 +141,7 @@ fasttrack apply --directory /Users/sathish/work/jj/fasttrack/fasttrack-terraform
 
 ### Test 6: Output Retrieval
 ```bash
-fasttrack output --directory /Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli/test-output
+fasttrack output --directory ./test-output
 ```
 
 **Result:** ✅ PASSED
@@ -190,7 +190,7 @@ az ad app show --id a07c218f-2f35-4154-8e9a-2f5c39afc311
 
 ### Test 8: Resource Destruction
 ```bash
-fasttrack destroy --directory /Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli/test-output --auto-approve
+fasttrack destroy --directory ./test-output --auto-approve
 ```
 
 **Result:** ✅ PASSED
@@ -445,7 +445,7 @@ The CLI is **PRODUCTION READY** with the following notes:
 ## Test Artifacts
 
 ### Generated Files
-- Location: `/Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli/test-output/`
+- Location: `./test-output/`
 - Files:
   - main.tf (Terraform main configuration)
   - variables.tf (Variable definitions)

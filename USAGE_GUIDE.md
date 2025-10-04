@@ -15,7 +15,7 @@
 
 ### Step 1: Navigate to CLI Directory
 ```bash
-cd /Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli
+cd fasttrack-terraform-cli
 ```
 
 ### Step 2: Create Virtual Environment

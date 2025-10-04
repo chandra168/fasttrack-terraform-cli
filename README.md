@@ -23,7 +23,7 @@ A powerful Click-based CLI tool for managing Azure resources through Terraform. 
 ### Option 1: Install from source
 
 ```bash
-cd /Users/sathish/work/jj/fasttrack/fasttrack-terraform-cli
+cd fasttrack-terraform-cli
 
 # Create virtual environment
 python3 -m venv venv
