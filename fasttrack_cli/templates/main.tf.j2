@@ -23,6 +23,12 @@ terraform {
 # Configure the Azure Provider
 provider "azurerm" {
   features {}
+
+  # Use Azure CLI authentication
+  use_cli = true
+
+  # Skip provider registration to speed up apply
+  skip_provider_registration = true
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -38,6 +44,10 @@ resource "azurerm_resource_group" "main" {
     project     = var.project_name
     managed_by  = "terraform"
     created_by  = "fasttrack-cli"
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
   }
 }
 
@@ -117,9 +127,12 @@ resource "azuread_application_password" "client_secret" {
 
 {% if use_existing_storage %}
 # Use existing storage account
+# NOTE: This storage account must already exist before running terraform apply
 data "azurerm_storage_account" "existing" {
   name                = var.storage_account_name
-  resource_group_name = azurerm_resource_group.main.name
+  resource_group_name = var.resource_group_name
+
+  depends_on = [azurerm_resource_group.main]
 }
 {% else %}
 # Create new storage account
@@ -141,6 +154,10 @@ resource "azurerm_storage_account" "main" {
     managed_by  = "terraform"
     created_by  = "fasttrack-cli"
   }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 {% endif %}
 
@@ -157,6 +174,10 @@ resource "azurerm_storage_container" "container_{{ loop.index }}" {
     environment = var.environment
     project     = var.project_name
     created_by  = "terraform"
+  }
+
+  lifecycle {
+    ignore_changes = [metadata]
   }
 }
 {% endfor %}

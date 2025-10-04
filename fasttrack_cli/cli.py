@@ -160,6 +160,19 @@ def generate(project_name, resource_group, location, environment, app_name, redi
 
     click.secho("✓ Configuration validated", fg="green")
 
+    # Validate existing storage account if specified
+    if storage_account and use_existing_storage and not skip_validation and not dry_run:
+        from .utils.azure_helper import storage_account_exists
+        click.echo(f"\nChecking if storage account '{storage_account}' exists...")
+        if not storage_account_exists(storage_account, resource_group):
+            click.secho(f"✗ Storage account '{storage_account}' does not exist in resource group '{resource_group}'", fg="red")
+            click.echo(f"\n💡 To use an existing storage account:")
+            click.echo(f"  1. The storage account must already exist")
+            click.echo(f"  2. It must be in the resource group: {resource_group}")
+            click.echo(f"\n💡 Or remove --use-existing-storage flag to create a new storage account")
+            sys.exit(1)
+        click.secho(f"✓ Storage account '{storage_account}' exists", fg="green")
+
     # Display configuration summary
     click.echo("\n📋 Configuration Summary:")
     click.echo(f"  Project: {project_name}")
@@ -322,6 +335,98 @@ def destroy(directory, auto_approve):
         sys.exit(1)
 
     click.echo("\n✅ Resources destroyed successfully!")
+
+
+@cli.command()
+@click.option('--directory', default='./terraform-generated', help='Terraform configuration directory')
+def init_import(directory):
+    """Initialize and import existing Azure resources into Terraform state"""
+
+    click.secho("\n🔄 Fasttrack Terraform CLI - Auto-Import Existing Resources", fg="cyan", bold=True)
+    click.echo("=" * 60)
+
+    if not os.path.exists(directory):
+        click.secho(f"✗ Directory not found: {directory}", fg="red")
+        sys.exit(1)
+
+    # Validate prerequisites
+    try:
+        validate_azure_login()
+        validate_terraform_installation()
+    except click.ClickException as e:
+        click.secho(f"✗ {str(e)}", fg="red")
+        sys.exit(1)
+
+    # Initialize terraform
+    click.echo("Initializing Terraform...")
+    if not terraform_init(directory):
+        sys.exit(1)
+
+    click.echo("\n📊 Checking for existing resources...")
+
+    # Read variables from terraform files to understand what resources we're managing
+    import re
+    vars_file = Path(directory) / "variables.tf"
+    if not vars_file.exists():
+        click.secho("✗ variables.tf not found", fg="red")
+        sys.exit(1)
+
+    # Extract variable defaults
+    with open(vars_file, 'r') as f:
+        content = f.read()
+
+    # Parse resource group name
+    rg_match = re.search(r'variable\s+"resource_group_name".*?default\s+=\s+"([^"]+)"', content, re.DOTALL)
+    if not rg_match:
+        click.secho("✗ Could not find resource_group_name in variables.tf", fg="red")
+        sys.exit(1)
+
+    resource_group = rg_match.group(1)
+
+    # Check if resource group exists
+    from .utils.azure_helper import resource_group_exists, storage_account_exists
+
+    click.echo(f"\nChecking resource group: {resource_group}")
+    if resource_group_exists(resource_group):
+        click.secho(f"  ✓ Resource group exists", fg="green")
+
+        # Try to import it
+        click.echo(f"  Importing into Terraform state...")
+        sub = get_current_subscription()
+        if sub:
+            rg_id = f"/subscriptions/{sub['id']}/resourceGroups/{resource_group}"
+            if terraform_import(directory, "azurerm_resource_group.main", rg_id):
+                click.secho(f"  ✓ Resource group imported", fg="green")
+            else:
+                click.echo(f"  ℹ Resource group may already be in state")
+    else:
+        click.echo(f"  ℹ Resource group does not exist (will be created on apply)")
+
+    # Check for storage account
+    storage_match = re.search(r'variable\s+"storage_account_name".*?default\s+=\s+"([^"]+)"', content, re.DOTALL)
+    if storage_match:
+        storage_account = storage_match.group(1)
+        click.echo(f"\nChecking storage account: {storage_account}")
+
+        if storage_account_exists(storage_account, resource_group):
+            click.secho(f"  ✓ Storage account exists", fg="green")
+
+            # Try to import it
+            click.echo(f"  Importing into Terraform state...")
+            if sub:
+                sa_id = f"/subscriptions/{sub['id']}/resourceGroups/{resource_group}/providers/Microsoft.Storage/storageAccounts/{storage_account}"
+                if terraform_import(directory, "azurerm_storage_account.main", sa_id):
+                    click.secho(f"  ✓ Storage account imported", fg="green")
+                else:
+                    click.echo(f"  ℹ Storage account may already be in state")
+        else:
+            click.echo(f"  ℹ Storage account does not exist (will be created on apply)")
+
+    click.echo("\n" + "=" * 60)
+    click.echo("✅ Import check complete!")
+    click.echo("\n💡 Next steps:")
+    click.echo(f"  1. Run: fasttrack apply --directory {directory}")
+    click.echo(f"  2. Terraform will create any missing resources")
 
 
 @cli.command()

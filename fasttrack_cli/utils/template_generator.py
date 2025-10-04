@@ -88,6 +88,11 @@ def validate_config(config: dict) -> tuple[bool, str]:
         if not storage_name.isalnum() or not storage_name.islower():
             return False, "storage_account_name must be lowercase alphanumeric only"
 
+        # Warn if using existing storage but storage account may not exist
+        if config.get("use_existing_storage") and not config.get("skip_validation"):
+            # This is just a validation check - actual existence check would require Azure SDK
+            pass  # We'll add a warning in the CLI instead
+
     if config.get("create_app_registration"):
         if not config.get("azuread_app_name"):
             return False, "azuread_app_name is required when create_app_registration is True"
